@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Версия — Подробности</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div class="container">
+    <a class="back" id="back-link" href="#">← Назад к игре</a>
+    <div id="version-info"></div>
+  </div>
+
+  <script>
+  const params = new URLSearchParams(window.location.search);
+  const gameId = params.get('game');
+  const versionId = params.get('version');
+
+  document.getElementById('back-link').href = `game.html?id=${gameId}`;
+
+  fetch('data/games.json')
+    .then(r => r.json())
+    .then(games => {
+      const game = games.find(g => g.id === gameId);
+      if (!game) {
+        document.body.innerHTML = '<h1>Игра не найдена</h1>';
+        return;
+      }
+      const version = game.versions.find(v => v.version === versionId);
+      if (!version) {
+        document.body.innerHTML = '<h1>Версия не найдена</h1>';
+        return;
+      }
+
+      const info = document.getElementById('version-info');
+      info.innerHTML = `
+        <div class="game-header small">
+          <img class="icon-large" src="${game.icon_url}" alt="${game.name}">
+          <div>
+            <h1>${game.name} — ${version.version}</h1>
+            <p class="ver-title">${version.title}</p>
+            <small class="ver-date">Дата: ${version.date}</small>
+          </div>
+        </div>
+        <h2>Что нового</h2>
+        <ul class="changes">
+          ${version.changes.map(c => `<li>${c}</li>`).join('')}
+        </ul>
+      `;
+    });
+  </script>
+</body>
+</html>
