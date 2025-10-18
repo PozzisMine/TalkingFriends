@@ -1,12 +1,5 @@
-/* Подключение шрифта Obelix Pro (предположим, что файл шрифта загружен в папку fonts) */
-@font-face {
-    font-family: 'Obelix Pro';
-    src: url('fonts/ObelixPro-Regular.ttf') format('truetype');
-}
-
-/* Стили для сайта */
 body {
-    font-family: 'Obelix Pro', sans-serif;
+    font-family: Arial, sans-serif;
     background-color: #f4f4f4;
     margin: 0;
     padding: 0;
@@ -21,12 +14,6 @@ header {
 
 h1 {
     margin: 0;
-    font-size: 36px;
-}
-
-h2, h3 {
-    font-size: 24px;
-    margin-bottom: 10px;
 }
 
 section {
