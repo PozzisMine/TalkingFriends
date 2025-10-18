@@ -1,0 +1,47 @@
+/* Подключение шрифта Obelix Pro (предположим, что файл шрифта загружен в папку fonts) */
+@font-face {
+    font-family: 'Obelix Pro';
+    src: url('fonts/ObelixPro-Regular.ttf') format('truetype');
+}
+
+/* Стили для сайта */
+body {
+    font-family: 'Obelix Pro', sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: #333;
+    color: white;
+    padding: 10px;
+    text-align: center;
+}
+
+h1 {
+    margin: 0;
+    font-size: 36px;
+}
+
+h2, h3 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+section {
+    margin: 20px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+ul li {
+    margin-bottom: 10px;
+}
