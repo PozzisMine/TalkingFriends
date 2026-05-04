@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Админ — Excel в data.json</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #10131a;
+      color: #f4f4f4;
+    }
+    header {
+      padding: 28px 20px;
+      text-align: center;
+      background: #171b25;
+    }
+    main {
+      width: min(1100px, 94%);
+      margin: 24px auto;
+    }
+    .box {
+      background: #171b25;
+      padding: 20px;
+      border-radius: 18px;
+      margin-bottom: 20px;
+    }
+    input, button {
+      padding: 11px 14px;
+      border: 0;
+      border-radius: 10px;
+      font-size: 15px;
+      margin: 6px 6px 6px 0;
+    }
+    button {
+      background: #38bdf8;
+      color: #07111f;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+    .danger { color: #fca5a5; }
+    .ok { color: #86efac; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #2a3142;
+      text-align: left;
+    }
+    th { color: #93c5fd; }
+    .table-wrap {
+      overflow-x: auto;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+    code {
+      background: #0f172a;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Админ-панель</h1>
+    <p>Excel (.xlsx) → data.json для сайта статистики</p>
+  </header>
+
+  <main>
+    <section class="box">
+      <h2>1. Загрузить Excel</h2>
+      <p>В Excel должны быть столбцы: <code>date</code>, <code>channel</code>, <code>channelId</code>, <code>subscribers</code>, <code>views</code>, <code>videos</code></p>
+      <input type="file" id="excelFile" accept=".xlsx,.xls" />
+      <button onclick="importExcel()">Проверить Excel</button>
+      <button onclick="downloadJson()" id="downloadBtn" disabled>Скачать data.json</button>
+      <p id="status"></p>
+    </section>
+
+    <section class="box">
+      <h2>2. Предпросмотр данных</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>date</th>
+              <th>channel</th>
+              <th>channelId</th>
+              <th>subscribers</th>
+              <th>views</th>
+              <th>videos</th>
+            </tr>
+          </thead>
+          <tbody id="preview"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="box">
+      <h2>3. Как загрузить на сайт</h2>
+      <p>После скачивания файла <code>data.json</code> загрузи его в GitHub:</p>
+      <p><b>Add file → Upload files → data.json → Commit changes</b></p>
+      <p>Потом подожди 1–2 минуты и обнови сайт.</p>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script>
+    let convertedData = [];
+
+    function normalizeDate(value) {
+      if (!value) return "";
+
+      if (typeof value === "number") {
+        const parsed = XLSX.SSF.parse_date_code(value);
+        if (!parsed) return "";
+        const y = parsed.y;
+        const m = String(parsed.m).padStart(2, "0");
+        const d = String(parsed.d).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+      }
+
+      const text = String(value).trim();
+
+      if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+
+      const match = text.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+      if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+
+      return text;
+    }
+
+    function toNumber(value) {
+      if (value === undefined || value === null || value === "") return 0;
+      return Number(String(value).replace(/\s/g, "").replace(/,/g, ""));
+    }
+
+    function importExcel() {
+      const file = document.getElementById("excelFile").files[0];
+      const status = document.getElementById("status");
+      const preview = document.getElementById("preview");
+      const downloadBtn = document.getElementById("downloadBtn");
+
+      convertedData = [];
+      preview.innerHTML = "";
+      downloadBtn.disabled = true;
+
+      if (!file) {
+        status.innerHTML = '<span class="danger">Сначала выбери Excel-файл.</span>';
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        try {
+          const bytes = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(bytes, { type: "array" });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+          const required = ["date", "channel", "channelId", "subscribers", "views", "videos"];
+          const errors = [];
+
+          convertedData = rows
+            .filter(row => Object.values(row).some(v => String(v).trim() !== ""))
+            .map((row, index) => {
+              for (const key of required) {
+                if (!(key in row)) errors.push(`Нет столбца: ${key}`);
+              }
+
+              const item = {
+                date: normalizeDate(row.date),
+                channel: String(row.channel || "").trim(),
+                channelId: String(row.channelId || "").trim(),
+                subscribers: toNumber(row.subscribers),
+                views: toNumber(row.views),
+                videos: toNumber(row.videos)
+              };
+
+              if (!item.date) errors.push(`Строка ${index + 2}: нет даты`);
+              if (!item.channel) errors.push(`Строка ${index + 2}: нет названия канала`);
+              if (!item.channelId) errors.push(`Строка ${index + 2}: нет channelId`);
+              if (!/^\d{4}-\d{2}-\d{2}$/.test(item.date)) {
+                errors.push(`Строка ${index + 2}: неправильная дата (${item.date})`);
+              }
+
+              return item;
+            });
+
+          convertedData.sort((a, b) => {
+            if (a.channelId !== b.channelId) return a.channel.localeCompare(b.channel);
+            return a.date.localeCompare(b.date);
+          });
+
+          if (errors.length) {
+            const unique = [...new Set(errors)].slice(0, 12);
+            status.innerHTML = '<span class="danger">Есть ошибки:<br>' + unique.join("<br>") + '</span>';
+            return;
+          }
+
+          renderPreview(convertedData);
+          status.innerHTML = `<span class="ok">Готово! Найдено строк: ${convertedData.length}. Теперь можно скачать data.json.</span>`;
+          downloadBtn.disabled = false;
+        } catch (err) {
+          status.innerHTML = '<span class="danger">Ошибка чтения Excel: ' + err.message + '</span>';
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+
+    function renderPreview(data) {
+      const preview = document.getElementById("preview");
+      preview.innerHTML = "";
+
+      data.slice(0, 100).forEach(item => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${item.date}</td>
+          <td>${item.channel}</td>
+          <td>${item.channelId}</td>
+          <td>${item.subscribers}</td>
+          <td>${item.views}</td>
+          <td>${item.videos}</td>
+        `;
+        preview.appendChild(tr);
+      });
+
+      if (data.length > 100) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="6">Показаны первые 100 строк из ${data.length}</td>`;
+        preview.appendChild(tr);
+      }
+    }
+
+    function downloadJson() {
+      if (!convertedData.length) return;
+
+      const blob = new Blob([JSON.stringify(convertedData, null, 2)], {
+        type: "application/json"
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "data.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
