@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>vidIQ Channel + Video Export</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #10131a; color: #f4f4f4; }
+    header { padding: 28px 20px; text-align: center; background: #171b25; }
+    main { width: min(1200px, 94%); margin: 24px auto; }
+    .box { background: #171b25; border-radius: 18px; padding: 20px; margin-bottom: 20px; }
+    label { display: block; margin: 12px 0; color: #cbd5e1; }
+    input, select, button { padding: 11px 14px; border: 0; border-radius: 10px; font-size: 15px; margin-top: 6px; }
+    input, select { width: 100%; background: #0f172a; color: #f4f4f4; }
+    button { background: #38bdf8; color: #07111f; font-weight: 700; cursor: pointer; margin-right: 8px; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .status { margin-top: 12px; color: #93c5fd; }
+    .error { color: #fca5a5; }
+    .ok { color: #86efac; }
+    table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    th, td { padding: 10px; border-bottom: 1px solid #2a3142; text-align: left; white-space: nowrap; }
+    th { color: #93c5fd; position: sticky; top: 0; background: #171b25; }
+    .table-wrap { overflow: auto; max-height: 520px; }
+    code { background: #0f172a; padding: 2px 6px; border-radius: 6px; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>vidIQ → Excel</h1>
+  <p>Экспорт статистики канала и видео в .xlsx</p>
+  <a href="index.html" style="color:#38bdf8;">← Назад</a>
+</header>
+
+<main>
+  <section class="box">
+    <h2>1. Выбери тип API</h2>
+    <label>
+      Тип:
+      <select id="apiType">
+        <option value="channel">Канал: подписчики, просмотры, видео</option>
+        <option value="video">Видео: просмотры, лайки, комментарии</option>
+      </select>
+    </label>
+
+    <label>
+      Ссылка API vidIQ:
+      <input id="apiUrl" value="https://api.vidiq.com/youtube/video/SXW2jC5YAac/stats-history?granularity=hourly&from=2000-01-01T01:01:01.000Z">
+    </label>
+
+    <div class="grid">
+      <label>
+        ID канала или видео:
+        <input id="itemId" placeholder="Например канал: UCX6OQ3DkcsbYNE6H8uQQuVA или видео: SXW2jC5YAac">
+      </label>
+
+      <label>
+        Granularity:
+        <select id="granularity">
+          <option value="hourly">hourly</option>
+          <option value="daily">daily</option>
+        </select>
+      </label>
+
+      <label>
+        От:
+        <input id="fromDate" type="datetime-local" value="2000-01-01T01:01">
+      </label>
+
+      <label>
+        До для канала:
+        <input id="toDate" type="date" value="2026-05-04">
+      </label>
+    </div>
+
+    <button onclick="buildUrl()">Собрать ссылку из ID</button>
+    <button onclick="loadStats()">Загрузить статистику</button>
+    <button id="downloadBtn" onclick="downloadExcel()" disabled>Скачать Excel</button>
+
+    <p id="status" class="status">Готово к загрузке.</p>
+  </section>
+
+  <section class="box">
+    <h2>2. Предпросмотр</h2>
+    <p>Для видео: дата/время, просмотры, лайки, дизлайки, комментарии. Если поля нет в API — будет пусто.</p>
+    <div class="table-wrap">
+      <table>
+        <thead id="tableHead"></thead>
+        <tbody id="preview"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+let exportRows = [];
+
+function setStatus(text, type = "") {
+  const el = document.getElementById("status");
+  el.className = "status " + type;
+  el.textContent = text;
+}
+
+function toIsoFromLocal(value) {
+  if (!value) return "";
+  return new Date(value).toISOString();
+}
+
+function buildUrl() {
+  const type = document.getElementById("apiType").value;
+  const id = document.getElementById("itemId").value.trim();
+  const granularity = document.getElementById("granularity").value;
+  const fromLocal = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+
+  if (!id) {
+    setStatus("Введи ID канала или видео.", "error");
+    return;
+  }
+
+  let url = "";
+
+  if (type === "video") {
+    const from = toIsoFromLocal(fromLocal);
+    url = `https://api.vidiq.com/youtube/video/${encodeURIComponent(id)}/stats-history?granularity=${granularity}&from=${encodeURIComponent(from)}`;
+  } else {
+    url = `https://api.vidiq.com/youtube/channels/public/stats?ids=${encodeURIComponent(id)}&from=${String(fromLocal).slice(0,10)}&to=${to}`;
+  }
+
+  document.getElementById("apiUrl").value = url;
+  setStatus("Ссылка собрана. Теперь нажми «Загрузить статистику».", "ok");
+}
+
+function findArraysDeep(value, result = []) {
+  if (Array.isArray(value)) {
+    result.push(value);
+  } else if (value && typeof value === "object") {
+    for (const key of Object.keys(value)) {
+      findArraysDeep(value[key], result);
+    }
+  }
+  return result;
+}
+
+function pick(obj, names) {
+  for (const name of names) {
+    if (obj && obj[name] !== undefined && obj[name] !== null) return obj[name];
+  }
+  return "";
+}
+
+function normalizeVideoRows(json) {
+  const arrays = findArraysDeep(json);
+  const best = arrays
+    .filter(arr => arr.length && typeof arr[0] === "object")
+    .sort((a, b) => b.length - a.length)[0];
+
+  if (!best) return [];
+
+  return best.map(item => ({
+    time: pick(item, ["time", "timestamp", "date", "datetime", "created_at", "createdAt", "x"]),
+    views: pick(item, ["views", "viewCount", "view_count"]),
+    likes: pick(item, ["likes", "likeCount", "like_count"]),
+    dislikes: pick(item, ["dislikes", "dislikeCount", "dislike_count"]),
+    comments: pick(item, ["comments", "commentCount", "comment_count"])
+  }));
+}
+
+function normalizeChannelRows(json) {
+  const arrays = findArraysDeep(json);
+  const best = arrays
+    .filter(arr => arr.length && typeof arr[0] === "object")
+    .sort((a, b) => b.length - a.length)[0];
+
+  if (!best) return [];
+
+  return best.map(item => ({
+    date: pick(item, ["date", "day", "time", "timestamp"]),
+    subscribers: pick(item, ["subscribers", "subscriberCount", "subs"]),
+    views: pick(item, ["views", "viewCount"]),
+    videos: pick(item, ["videos", "videoCount"]),
+    likes: pick(item, ["likes", "likeCount"])
+  }));
+}
+
+async function loadStats() {
+  const type = document.getElementById("apiType").value;
+  const url = document.getElementById("apiUrl").value.trim();
+
+  exportRows = [];
+  document.getElementById("preview").innerHTML = "";
+  document.getElementById("downloadBtn").disabled = true;
+
+  if (!url) {
+    setStatus("Вставь API-ссылку.", "error");
+    return;
+  }
+
+  setStatus("Загружаю...");
+
+  try {
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      throw new Error("HTTP " + res.status);
+    }
+
+    const json = await res.json();
+
+    exportRows = type === "video"
+      ? normalizeVideoRows(json)
+      : normalizeChannelRows(json);
+
+    exportRows = exportRows.filter(row =>
+      Object.values(row).some(v => v !== "" && v !== null && v !== undefined)
+    );
+
+    if (!exportRows.length) {
+      console.log("Ответ API:", json);
+      setStatus("Не удалось найти таблицу в ответе API. Открой консоль браузера, там будет ответ.", "error");
+      return;
+    }
+
+    renderTable(exportRows);
+    document.getElementById("downloadBtn").disabled = false;
+    setStatus(`Готово! Найдено строк: ${exportRows.length}.`, "ok");
+  } catch (err) {
+    setStatus("Ошибка: " + err.message + ". Возможно, CORS или доступ API ограничен.", "error");
+  }
+}
+
+function renderTable(rows) {
+  const head = document.getElementById("tableHead");
+  const body = document.getElementById("preview");
+  const keys = Object.keys(rows[0]);
+
+  head.innerHTML = "<tr>" + keys.map(k => `<th>${k}</th>`).join("") + "</tr>";
+  body.innerHTML = "";
+
+  rows.slice(0, 200).forEach(row => {
+    body.innerHTML += "<tr>" + keys.map(k => `<td>${row[k] ?? ""}</td>`).join("") + "</tr>";
+  });
+
+  if (rows.length > 200) {
+    body.innerHTML += `<tr><td colspan="${keys.length}">Показаны первые 200 строк из ${rows.length}</td></tr>`;
+  }
+}
+
+function downloadExcel() {
+  if (!exportRows.length) return;
+
+  const type = document.getElementById("apiType").value;
+  const worksheet = XLSX.utils.json_to_sheet(exportRows);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, type === "video" ? "Video Stats" : "Channel Stats");
+  XLSX.writeFile(workbook, type === "video" ? "vidiq-video-stats.xlsx" : "vidiq-channel-stats.xlsx");
+}
+</script>
+</body>
+</html>
