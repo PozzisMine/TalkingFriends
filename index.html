@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Channel Stats Archive</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Talking Tom Stats</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
@@ -11,80 +11,84 @@
 <body>
   <header class="header">
     <div>
-      <h1>Channel Stats Archive</h1>
-      <p>Архив статистики каналов: подписчики, просмотры, видео и графики роста.</p>
+      <h1>Talking Tom Stats</h1>
+      <p>Статистика каналов: подписчики, просмотры и количество видео</p>
     </div>
   </header>
 
-  <main class="container">
-    <section class="panel filters">
-      <div>
-        <label for="channelSelect">Выбери канал:</label>
-        <select id="channelSelect"></select>
+  <nav class="tabs">
+    <button class="tab active" data-tab="charts">Графики</button>
+    <button class="tab" data-tab="top">Топ каналов Talking Tom</button>
+    <button class="tab" data-tab="history">История</button>
+  </nav>
+
+  <main>
+    <section id="charts" class="panel active">
+      <div class="controls">
+        <label>Канал
+          <select id="channelSelect"></select>
+        </label>
+        <label>Год
+          <select id="yearSelect"></select>
+        </label>
+        <button id="resetZoom">Сбросить масштаб</button>
       </div>
-      <div>
-        <label for="yearSelect">Выбери год:</label>
-        <select id="yearSelect"></select>
+
+      <div class="cards">
+        <div class="card"><span>Подписчики</span><strong id="subsNow">—</strong></div>
+        <div class="card"><span>Просмотры</span><strong id="viewsNow">—</strong></div>
+        <div class="card"><span>Видео</span><strong id="videosNow">—</strong></div>
+        <div class="card"><span>Рост за год</span><strong id="yearGrowth">—</strong></div>
       </div>
-      <button id="resetZoomBtn" type="button">Сбросить масштаб</button>
+
+      <div class="chartBox"><canvas id="statsChart"></canvas></div>
     </section>
 
-    <section class="hint-box">
-      <b>Как двигать график:</b> колесиком мыши — приближение, зажать и тянуть — двигать график. На телефоне — двумя пальцами.
-    </section>
-
-    <section class="channel-card">
-      <img id="channelAvatar" src="" alt="Аватар канала" />
-      <div>
-        <h2 id="channelName">Загрузка...</h2>
-        <p id="channelDescription"></p>
+    <section id="top" class="panel">
+      <div class="controls">
+        <label>Год
+          <select id="topYearSelect"></select>
+        </label>
+        <label>Сортировка
+          <select id="topSortSelect">
+            <option value="subscribers">Подписчики</option>
+            <option value="views">Просмотры</option>
+            <option value="videos">Видео</option>
+            <option value="subsGrowth">Прирост подписчиков</option>
+            <option value="viewsGrowth">Прирост просмотров</option>
+            <option value="videosGrowth">Новых видео</option>
+          </select>
+        </label>
+      </div>
+      <div class="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Канал</th>
+              <th>Подписчики</th>
+              <th>Просмотры</th>
+              <th>Видео</th>
+              <th>+ Подписчики</th>
+              <th>+ Просмотры</th>
+              <th>+ Видео</th>
+            </tr>
+          </thead>
+          <tbody id="topTable"></tbody>
+        </table>
       </div>
     </section>
 
-    <section class="stats-grid">
-      <div class="stat-box">
-        <span>Подписчики</span>
-        <strong id="subsNow">—</strong>
-        <small id="subsGrowth">—</small>
-      </div>
-      <div class="stat-box">
-        <span>Просмотры</span>
-        <strong id="viewsNow">—</strong>
-        <small id="viewsGrowth">—</small>
-      </div>
-      <div class="stat-box">
-        <span>Видео</span>
-        <strong id="videosNow">—</strong>
-        <small id="videosGrowth">—</small>
-      </div>
-      <div class="stat-box">
-        <span>Последнее обновление</span>
-        <strong id="lastDate">—</strong>
-        <small>по данным из data.json</small>
-      </div>
-    </section>
-
-    <section class="chart-box">
-      <h3>График подписчиков</h3>
-      <canvas id="subsChart"></canvas>
-    </section>
-
-    <section class="chart-box">
-      <h3>График просмотров</h3>
-      <canvas id="viewsChart"></canvas>
-    </section>
-
-    <section class="table-box">
-      <h3>История статистики</h3>
-      <div class="table-scroll">
+    <section id="history" class="panel">
+      <div class="tableWrap">
         <table>
           <thead>
             <tr>
               <th>Дата</th>
+              <th>Канал</th>
               <th>Подписчики</th>
               <th>Просмотры</th>
               <th>Видео</th>
-              <th>Прирост подписчиков</th>
             </tr>
           </thead>
           <tbody id="historyTable"></tbody>
@@ -92,10 +96,6 @@
       </div>
     </section>
   </main>
-
-  <footer class="footer">
-    <p>Данные редактируются в файле <b>data.json</b></p>
-  </footer>
 
   <script src="script.js"></script>
 </body>

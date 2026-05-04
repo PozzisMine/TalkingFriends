@@ -1,203 +1,99 @@
-let subsChart;
-let viewsChart;
-let allData = [];
-let currentChannelId = '';
+let rawData = [];
+let chart;
+const fmt = new Intl.NumberFormat('ru-RU');
 
-const formatNumber = (num) => new Intl.NumberFormat('ru-RU').format(num);
-const getYear = (date) => new Date(date).getFullYear().toString();
+const $ = (id) => document.getElementById(id);
+const yearOf = (d) => String(new Date(d).getFullYear());
 
-function getGrowth(history, key) {
-  if (history.length < 2) return 'Недостаточно данных';
-  const last = history[history.length - 1][key];
-  const prev = history[history.length - 2][key];
-  const diff = last - prev;
-  const sign = diff >= 0 ? '+' : '';
-  return `${sign}${formatNumber(diff)} за день`;
+async function loadData(){
+  const res = await fetch('data.json?cache=' + Date.now());
+  rawData = await res.json();
+  rawData.sort((a,b)=> a.date.localeCompare(b.date));
+  initTabs(); initFilters(); renderAll();
 }
 
-function getChannel(channelId) {
-  return allData.find(item => item.id === channelId);
-}
-
-function getSortedHistory(channel) {
-  return [...channel.history].sort((a, b) => new Date(a.date) - new Date(b.date));
-}
-
-function fillYearSelect(channelId) {
-  const channel = getChannel(channelId);
-  const yearSelect = document.getElementById('yearSelect');
-  const oldValue = yearSelect.value;
-  const years = [...new Set(getSortedHistory(channel).map(row => getYear(row.date)))];
-
-  yearSelect.innerHTML = '<option value="all">Все годы</option>';
-  years.forEach(year => {
-    const option = document.createElement('option');
-    option.value = year;
-    option.textContent = year;
-    yearSelect.appendChild(option);
-  });
-
-  if (oldValue && (oldValue === 'all' || years.includes(oldValue))) {
-    yearSelect.value = oldValue;
-  } else {
-    yearSelect.value = 'all';
-  }
-}
-
-function getFilteredHistory(channel) {
-  const selectedYear = document.getElementById('yearSelect').value;
-  const history = getSortedHistory(channel);
-  if (selectedYear === 'all') return history;
-  return history.filter(row => getYear(row.date) === selectedYear);
-}
-
-function renderChannel(channelId) {
-  const channel = getChannel(channelId);
-  if (!channel) return;
-  currentChannelId = channelId;
-
-  const fullHistory = getSortedHistory(channel);
-  const history = getFilteredHistory(channel);
-  const last = history[history.length - 1] || fullHistory[fullHistory.length - 1];
-
-  document.getElementById('channelAvatar').src = channel.avatar;
-  document.getElementById('channelName').textContent = channel.name;
-  document.getElementById('channelDescription').textContent = channel.description;
-  document.getElementById('subsNow').textContent = formatNumber(last.subscribers);
-  document.getElementById('viewsNow').textContent = formatNumber(last.views);
-  document.getElementById('videosNow').textContent = formatNumber(last.videos);
-  document.getElementById('lastDate').textContent = last.date;
-
-  document.getElementById('subsGrowth').textContent = getGrowth(history, 'subscribers');
-  document.getElementById('viewsGrowth').textContent = getGrowth(history, 'views');
-  document.getElementById('videosGrowth').textContent = getGrowth(history, 'videos');
-
-  renderTable(history);
-  renderCharts(history);
-}
-
-function renderTable(history) {
-  const tbody = document.getElementById('historyTable');
-  tbody.innerHTML = '';
-
-  history.slice().reverse().forEach((row, index) => {
-    const originalIndex = history.length - 1 - index;
-    const prev = history[originalIndex - 1];
-    const growth = prev ? row.subscribers - prev.subscribers : 0;
-    const sign = growth >= 0 ? '+' : '';
-
-    tbody.innerHTML += `
-      <tr>
-        <td>${row.date}</td>
-        <td>${formatNumber(row.subscribers)}</td>
-        <td>${formatNumber(row.views)}</td>
-        <td>${formatNumber(row.videos)}</td>
-        <td>${prev ? sign + formatNumber(growth) : '—'}</td>
-      </tr>
-    `;
+function initTabs(){
+  document.querySelectorAll('.tab').forEach(btn=>{
+    btn.onclick = () => {
+      document.querySelectorAll('.tab,.panel').forEach(el=>el.classList.remove('active'));
+      btn.classList.add('active'); $(btn.dataset.tab).classList.add('active');
+      if(chart) chart.resize();
+    };
   });
 }
 
-function chartOptions() {
-  return {
-    responsive: true,
-    interaction: {
-      mode: 'index',
-      intersect: false
-    },
-    plugins: {
-      legend: { labels: { color: '#e5e7eb' } },
-      zoom: {
-        limits: {
-          x: { min: 'original', max: 'original' },
-          y: { min: 'original', max: 'original' }
-        },
-        pan: {
-          enabled: true,
-          mode: 'x'
-        },
-        zoom: {
-          wheel: { enabled: true },
-          pinch: { enabled: true },
-          mode: 'x'
-        }
-      }
-    },
-    scales: {
-      x: { ticks: { color: '#9ca3af' }, grid: { color: '#1f2937' } },
-      y: { ticks: { color: '#9ca3af' }, grid: { color: '#1f2937' } }
+function initFilters(){
+  const channels = [...new Set(rawData.map(x=>x.channel))];
+  const years = [...new Set(rawData.map(x=>yearOf(x.date)))].sort();
+  $('channelSelect').innerHTML = channels.map(c=>`<option>${c}</option>`).join('');
+  $('yearSelect').innerHTML = '<option value="all">Все годы</option>' + years.map(y=>`<option>${y}</option>`).join('');
+  $('topYearSelect').innerHTML = years.map(y=>`<option>${y}</option>`).join('');
+  $('topYearSelect').value = years[years.length-1] || '';
+  ['channelSelect','yearSelect','topYearSelect','topSortSelect'].forEach(id => $(id).onchange = renderAll);
+  $('resetZoom').onclick = () => chart && chart.resetZoom();
+}
+
+function getFiltered(){
+  const channel = $('channelSelect').value;
+  const year = $('yearSelect').value;
+  return rawData.filter(x => x.channel === channel && (year === 'all' || yearOf(x.date) === year));
+}
+
+function renderCards(data){
+  const last = data[data.length-1];
+  if(!last) return;
+  $('subsNow').textContent = fmt.format(last.subscribers);
+  $('viewsNow').textContent = fmt.format(last.views);
+  $('videosNow').textContent = fmt.format(last.videos);
+  const first = data[0];
+  $('yearGrowth').textContent = '+' + fmt.format(last.subscribers - first.subscribers);
+}
+
+function renderChart(data){
+  const ctx = $('statsChart');
+  if(chart) chart.destroy();
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: data.map(x=>x.date), datasets: [
+      { label:'Подписчики', data:data.map(x=>x.subscribers), tension:.25 },
+      { label:'Просмотры', data:data.map(x=>x.views), tension:.25 },
+      { label:'Видео', data:data.map(x=>x.videos), tension:.25 }
+    ]},
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{ legend:{labels:{color:'#e5e7eb'}}, zoom:{ pan:{enabled:true,mode:'x'}, zoom:{wheel:{enabled:true},pinch:{enabled:true},mode:'x'} } },
+      scales:{ x:{ticks:{color:'#cbd5e1'},grid:{color:'#334155'}}, y:{ticks:{color:'#cbd5e1'},grid:{color:'#334155'}} }
     }
-  };
-}
-
-function renderCharts(history) {
-  const labels = history.map(row => row.date);
-  const subscribers = history.map(row => row.subscribers);
-  const views = history.map(row => row.views);
-
-  if (subsChart) subsChart.destroy();
-  if (viewsChart) viewsChart.destroy();
-
-  subsChart = new Chart(document.getElementById('subsChart'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Подписчики',
-        data: subscribers,
-        tension: 0.3,
-        pointRadius: 4
-      }]
-    },
-    options: chartOptions()
-  });
-
-  viewsChart = new Chart(document.getElementById('viewsChart'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Просмотры',
-        data: views,
-        tension: 0.3,
-        pointRadius: 4
-      }]
-    },
-    options: chartOptions()
   });
 }
 
-function resetZoom() {
-  if (subsChart) subsChart.resetZoom();
-  if (viewsChart) viewsChart.resetZoom();
+function yearlyTop(year, sortKey){
+  const channels = [...new Set(rawData.map(x=>x.channel))];
+  return channels.map(channel=>{
+    const rows = rawData.filter(x=>x.channel===channel && yearOf(x.date)===year).sort((a,b)=>a.date.localeCompare(b.date));
+    if(!rows.length) return null;
+    const first = rows[0], last = rows[rows.length-1];
+    return { channel, subscribers:last.subscribers, views:last.views, videos:last.videos,
+      subsGrowth:last.subscribers-first.subscribers,
+      viewsGrowth:last.views-first.views,
+      videosGrowth:last.videos-first.videos };
+  }).filter(Boolean).sort((a,b)=> (b[sortKey]||0)-(a[sortKey]||0));
 }
 
-async function init() {
-  const response = await fetch('data.json');
-  allData = await response.json();
-
-  const channelSelect = document.getElementById('channelSelect');
-  const yearSelect = document.getElementById('yearSelect');
-  const resetZoomBtn = document.getElementById('resetZoomBtn');
-
-  allData.forEach(channel => {
-    const option = document.createElement('option');
-    option.value = channel.id;
-    option.textContent = channel.name;
-    channelSelect.appendChild(option);
-  });
-
-  channelSelect.addEventListener('change', () => {
-    fillYearSelect(channelSelect.value);
-    renderChannel(channelSelect.value);
-  });
-
-  yearSelect.addEventListener('change', () => renderChannel(currentChannelId));
-  resetZoomBtn.addEventListener('click', resetZoom);
-
-  currentChannelId = allData[0].id;
-  fillYearSelect(currentChannelId);
-  renderChannel(currentChannelId);
+function renderTop(){
+  const year = $('topYearSelect').value;
+  const sortKey = $('topSortSelect').value;
+  const rows = yearlyTop(year, sortKey);
+  $('topTable').innerHTML = rows.map((r,i)=>`<tr>
+    <td class="rank">${i+1}</td><td>${r.channel}</td><td>${fmt.format(r.subscribers)}</td><td>${fmt.format(r.views)}</td><td>${fmt.format(r.videos)}</td>
+    <td>+${fmt.format(r.subsGrowth)}</td><td>+${fmt.format(r.viewsGrowth)}</td><td>+${fmt.format(r.videosGrowth)}</td>
+  </tr>`).join('') || '<tr><td colspan="8" class="muted">Нет данных за этот год</td></tr>';
 }
 
-init();
+function renderHistory(){
+  $('historyTable').innerHTML = rawData.slice().reverse().map(x=>`<tr><td>${x.date}</td><td>${x.channel}</td><td>${fmt.format(x.subscribers)}</td><td>${fmt.format(x.views)}</td><td>${fmt.format(x.videos)}</td></tr>`).join('');
+}
+
+function renderAll(){ const data=getFiltered(); renderCards(data); renderChart(data); renderTop(); renderHistory(); }
+loadData();
