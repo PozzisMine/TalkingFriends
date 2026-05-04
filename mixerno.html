@@ -1,75 +1,167 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mixerno Live Stats</title>
-  <link rel="stylesheet" href="mixerno.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #10131a;
+      color: white;
+    }
+
+    header {
+      text-align: center;
+      padding: 30px;
+      background: #171b25;
+    }
+
+    main {
+      width: 94%;
+      max-width: 1200px;
+      margin: 25px auto;
+    }
+
+    .box, .card {
+      background: #171b25;
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .settings {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: end;
+    }
+
+    input, select, button {
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      font-size: 15px;
+    }
+
+    input {
+      width: 600px;
+      max-width: 100%;
+    }
+
+    button {
+      background: #38bdf8;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .card span {
+      color: #94a3b8;
+    }
+
+    .card strong {
+      display: block;
+      font-size: 32px;
+      margin-top: 10px;
+    }
+
+    canvas {
+      max-height: 420px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #2a3142;
+    }
+
+    @media (max-width: 800px) {
+      .cards {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
+
 <body>
   <header>
     <h1>Mixerno Live Stats</h1>
-    <p>Live-счётчик подписчиков, просмотров и видео</p>
-    <a href="index.html">← Вернуться к основной статистике</a>
+    <p>Live-статистика YouTube-канала</p>
+    <a href="index.html" style="color:#38bdf8;">← Назад</a>
   </header>
 
   <main>
-    <section class="settings">
+    <section class="box settings">
       <label>
-        Mixerno API URL:
-        <input id="apiUrl" value="https://backend.mixerno.space/api/youtube/estv3/UCnBTGpEQ3LGPW2Shh7fiabg" />
+        API Mixerno:
+        <input id="apiUrl" value="https://backend.mixerno.space/api/youtube/estv3/UCnBTGpEQ3LGPW2Shh7fiabg">
       </label>
 
       <label>
         Обновление:
         <select id="intervalSelect">
-          <option value="1000">2 секунд</option>
+          <option value="1000">1 секунд</option>
           <option value="30000" selected>30 секунд</option>
           <option value="60000">1 минута</option>
         </select>
       </label>
 
-      <button id="startBtn">Запустить</button>
-      <button id="stopBtn">Остановить</button>
+      <label>
+        График:
+        <select id="chartMode">
+          <option value="all">Все</option>
+          <option value="subscribers">Подписчики</option>
+          <option value="views">Просмотры</option>
+          <option value="videos">Видео</option>
+        </select>
+      </label>
+
+      <button onclick="startLive()">Запустить</button>
+      <button onclick="stopLive()">Остановить</button>
     </section>
 
-    <section class="channel">
-      <img id="channelAvatar" src="" alt="" />
-      <div>
-        <h2 id="channelTitle">Загрузка...</h2>
-        <p id="channelId">—</p>
-        <p id="lastUpdate">Последнее обновление: —</p>
-      </div>
+    <section class="box">
+      <h2 id="channelTitle">Загрузка...</h2>
+      <p id="lastUpdate">Последнее обновление: —</p>
+      <p>Эти данные не записываются в основной data.json</p>
     </section>
 
     <section class="cards">
       <div class="card">
-        <span>Live подписчики</span>
+        <span>Подписчики</span>
         <strong id="liveSubs">—</strong>
       </div>
 
       <div class="card">
-        <span>Live просмотры</span>
+        <span>Просмотры</span>
         <strong id="liveViews">—</strong>
       </div>
 
       <div class="card">
-        <span>Количество видео</span>
+        <span>Видео</span>
         <strong id="liveVideos">—</strong>
       </div>
     </section>
 
-    <section class="notice">
-      <b>Важно:</b> эти данные используются только для live-страницы и не записываются в основной <code>data.json</code>.
-    </section>
-
-    <section class="chart-box">
+    <section class="box">
       <h2>График в реальном времени</h2>
       <canvas id="liveChart"></canvas>
     </section>
 
-    <section class="chart-box">
+    <section class="box">
       <h2>Последние обновления</h2>
       <table>
         <thead>
@@ -85,6 +177,149 @@
     </section>
   </main>
 
-  <script src="mixerno.js"></script>
+  <script>
+    let timer = null;
+    let history = [];
+    let liveChart = null;
+
+    function formatNumber(num) {
+      return Number(num || 0).toLocaleString("ru-RU");
+    }
+
+    function formatTime() {
+      return new Date().toLocaleTimeString("ru-RU", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
+    }
+
+    async function loadMixernoStats() {
+      try {
+        const url = document.getElementById("apiUrl").value;
+        const res = await fetch(url);
+        const json = await res.json();
+
+        const item = json.items[0];
+        const stats = item.statistics;
+
+        const data = {
+          time: formatTime(),
+          title: item.snippet?.title || "YouTube канал",
+          subscribers: Number(stats.subscriberCount || 0),
+          views: Number(stats.viewCount || 0),
+          videos: Number(stats.videoCount || 0)
+        };
+
+        document.getElementById("channelTitle").textContent = data.title;
+        document.getElementById("lastUpdate").textContent =
+          "Последнее обновление: " + data.time;
+
+        document.getElementById("liveSubs").textContent = formatNumber(data.subscribers);
+        document.getElementById("liveViews").textContent = formatNumber(data.views);
+        document.getElementById("liveVideos").textContent = formatNumber(data.videos);
+
+        history.push(data);
+
+        if (history.length > 60) {
+          history.shift();
+        }
+
+        renderChart();
+        renderTable();
+
+      } catch (error) {
+        document.getElementById("lastUpdate").textContent = "Ошибка загрузки";
+        console.error(error);
+      }
+    }
+
+    function renderChart() {
+      const mode = document.getElementById("chartMode").value;
+      const labels = history.map(item => item.time);
+      const datasets = [];
+
+      if (mode === "all" || mode === "subscribers") {
+        datasets.push({
+          label: "Подписчики",
+          data: history.map(item => item.subscribers),
+          borderWidth: 2,
+          tension: 0.25
+        });
+      }
+
+      if (mode === "all" || mode === "views") {
+        datasets.push({
+          label: "Просмотры",
+          data: history.map(item => item.views),
+          borderWidth: 2,
+          tension: 0.25
+        });
+      }
+
+      if (mode === "all" || mode === "videos") {
+        datasets.push({
+          label: "Видео",
+          data: history.map(item => item.videos),
+          borderWidth: 2,
+          tension: 0.25
+        });
+      }
+
+      const chartData = {
+        labels: labels,
+        datasets: datasets
+      };
+
+      if (!liveChart) {
+        liveChart = new Chart(document.getElementById("liveChart"), {
+          type: "line",
+          data: chartData,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false
+          }
+        });
+      } else {
+        liveChart.data = chartData;
+        liveChart.update();
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById("historyTable");
+      tbody.innerHTML = "";
+
+      [...history].reverse().forEach(item => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${item.time}</td>
+            <td>${formatNumber(item.subscribers)}</td>
+            <td>${formatNumber(item.views)}</td>
+            <td>${formatNumber(item.videos)}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function startLive() {
+      stopLive();
+      loadMixernoStats();
+
+      const interval = Number(document.getElementById("intervalSelect").value);
+      timer = setInterval(loadMixernoStats, interval);
+    }
+
+    function stopLive() {
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }
+
+    document.getElementById("chartMode").addEventListener("change", renderChart);
+
+    startLive();
+  </script>
 </body>
 </html>
