@@ -1,10 +1,74 @@
 [
-  {"date":"2020-01-01","channel":"Talking Tom & Friends","channelId":"UC0N0d6P6b1x4xq4QxQxQxQA","subscribers":9000000,"views":3200000000,"videos":420},
-  {"date":"2020-12-31","channel":"Talking Tom & Friends","channelId":"UC0N0d6P6b1x4xq4QxQxQxQA","subscribers":10500000,"views":3900000000,"videos":470},
-  {"date":"2021-01-01","channel":"Talking Tom & Friends","channelId":"UC0N0d6P6b1x4xq4QxQxQxQA","subscribers":10500000,"views":3900000000,"videos":470},
-  {"date":"2021-12-31","channel":"Talking Tom & Friends","channelId":"UC0N0d6P6b1x4xq4QxQxQxQA","subscribers":12300000,"views":4600000000,"videos":515},
-  {"date":"2020-01-01","channel":"Talking Angela","channelId":"UC_ANGELA_EXAMPLE","subscribers":3500000,"views":900000000,"videos":180},
-  {"date":"2020-12-31","channel":"Talking Angela","channelId":"UC_ANGELA_EXAMPLE","subscribers":4300000,"views":1200000000,"videos":220},
-  {"date":"2021-01-01","channel":"Talking Angela","channelId":"UC_ANGELA_EXAMPLE","subscribers":4300000,"views":1200000000,"videos":220},
-  {"date":"2021-12-31","channel":"Talking Angela","channelId":"UC_ANGELA_EXAMPLE","subscribers":5100000,"views":1550000000,"videos":260}
+  {
+    "date": "2020-01-01",
+    "channel": "Talking Angela",
+    "channelId": "UC_ANGELA_EXAMPLE",
+    "subscribers": 3500000,
+    "views": 900000000,
+    "videos": 180
+  },
+  {
+    "date": "2020-12-31",
+    "channel": "Talking Angela",
+    "channelId": "UC_ANGELA_EXAMPLE",
+    "subscribers": 4300000,
+    "views": 1200000000,
+    "videos": 220
+  },
+  {
+    "date": "2021-01-01",
+    "channel": "Talking Angela",
+    "channelId": "UC_ANGELA_EXAMPLE",
+    "subscribers": 4300000,
+    "views": 1200000000,
+    "videos": 220
+  },
+  {
+    "date": "2021-12-31",
+    "channel": "Talking Angela",
+    "channelId": "UC_ANGELA_EXAMPLE",
+    "subscribers": 5100000,
+    "views": 1550000000,
+    "videos": 260
+  },
+  {
+    "date": "2020-01-01",
+    "channel": "Talking Tom & Friends",
+    "channelId": "UC0N0d6P6b1x4xq4QxQxQxQA",
+    "subscribers": 9000000,
+    "views": 3200000000,
+    "videos": 420
+  },
+  {
+    "date": "2020-12-31",
+    "channel": "Talking Tom & Friends",
+    "channelId": "UC0N0d6P6b1x4xq4QxQxQxQA",
+    "subscribers": 10500000,
+    "views": 3900000000,
+    "videos": 470
+  },
+  {
+    "date": "2021-01-01",
+    "channel": "Talking Tom & Friends",
+    "channelId": "UC0N0d6P6b1x4xq4QxQxQxQA",
+    "subscribers": 10500000,
+    "views": 3900000000,
+    "videos": 470
+  },
+  {
+    "date": "2021-12-31",
+    "channel": "Talking Tom & Friends",
+    "channelId": "UC0N0d6P6b1x4xq4QxQxQxQA",
+    "subscribers": 12300000,
+    "views": 4600000000,
+    "videos": 515
+  },
+  {
+    "date": "2026-05-04",
+    "channel": "Говорящий Том и Друзья",
+    "channelId": "UCnBTGpEQ3LGPW2Shh7fiabg",
+    "subscribers": 10300000,
+    "views": 4561110956,
+    "videos": 1009
+  }
 ]
