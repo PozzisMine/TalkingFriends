@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mixerno Live Stats</title>
+  <link rel="stylesheet" href="mixerno.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Mixerno Live Stats</h1>
+    <p>Live-счётчик подписчиков, просмотров и видео</p>
+    <a href="index.html">← Вернуться к основной статистике</a>
+  </header>
+
+  <main>
+    <section class="settings">
+      <label>
+        Mixerno API URL:
+        <input id="apiUrl" value="https://backend.mixerno.space/api/youtube/estv3/UCnBTGpEQ3LGPW2Shh7fiabg" />
+      </label>
+
+      <label>
+        Обновление:
+        <select id="intervalSelect">
+          <option value="10000">10 секунд</option>
+          <option value="30000" selected>30 секунд</option>
+          <option value="60000">1 минута</option>
+        </select>
+      </label>
+
+      <button id="startBtn">Запустить</button>
+      <button id="stopBtn">Остановить</button>
+    </section>
+
+    <section class="channel">
+      <img id="channelAvatar" src="" alt="" />
+      <div>
+        <h2 id="channelTitle">Загрузка...</h2>
+        <p id="channelId">—</p>
+        <p id="lastUpdate">Последнее обновление: —</p>
+      </div>
+    </section>
+
+    <section class="cards">
+      <div class="card">
+        <span>Live подписчики</span>
+        <strong id="liveSubs">—</strong>
+      </div>
+
+      <div class="card">
+        <span>Live просмотры</span>
+        <strong id="liveViews">—</strong>
+      </div>
+
+      <div class="card">
+        <span>Количество видео</span>
+        <strong id="liveVideos">—</strong>
+      </div>
+    </section>
+
+    <section class="notice">
+      <b>Важно:</b> эти данные используются только для live-страницы и не записываются в основной <code>data.json</code>.
+    </section>
+
+    <section class="chart-box">
+      <h2>График в реальном времени</h2>
+      <canvas id="liveChart"></canvas>
+    </section>
+
+    <section class="chart-box">
+      <h2>Последние обновления</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Время</th>
+            <th>Подписчики</th>
+            <th>Просмотры</th>
+            <th>Видео</th>
+          </tr>
+        </thead>
+        <tbody id="historyTable"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="mixerno.js"></script>
+</body>
+</html>
