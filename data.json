@@ -1,0 +1,66 @@
+[
+  {
+    "id": "talking-tom-friends",
+    "name": "Talking Tom & Friends",
+    "description": "Пример канала. Здесь можно хранить архив статистики.",
+    "avatar": "https://placehold.co/200x200?text=TT",
+    "history": [
+      {
+        "date": "2026-05-01",
+        "subscribers": 1200000,
+        "views": 500000000,
+        "videos": 350
+      },
+      {
+        "date": "2026-05-02",
+        "subscribers": 1204500,
+        "views": 501200000,
+        "videos": 350
+      },
+      {
+        "date": "2026-05-03",
+        "subscribers": 1210000,
+        "views": 502800000,
+        "videos": 351
+      },
+      {
+        "date": "2026-05-04",
+        "subscribers": 1215000,
+        "views": 504000000,
+        "videos": 351
+      }
+    ]
+  },
+  {
+    "id": "talking-angela",
+    "name": "Talking Angela",
+    "description": "Второй пример канала для сравнения статистики.",
+    "avatar": "https://placehold.co/200x200?text=TA",
+    "history": [
+      {
+        "date": "2026-05-01",
+        "subscribers": 800000,
+        "views": 220000000,
+        "videos": 180
+      },
+      {
+        "date": "2026-05-02",
+        "subscribers": 802000,
+        "views": 221000000,
+        "videos": 180
+      },
+      {
+        "date": "2026-05-03",
+        "subscribers": 805500,
+        "views": 222500000,
+        "videos": 181
+      },
+      {
+        "date": "2026-05-04",
+        "subscribers": 807000,
+        "views": 223100000,
+        "videos": 181
+      }
+    ]
+  }
+]

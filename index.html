@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Channel Stats Archive</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header class="header">
+    <div>
+      <h1>Channel Stats Archive</h1>
+      <p>Архив статистики каналов: подписчики, просмотры, видео и графики роста.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <label for="channelSelect">Выбери канал:</label>
+      <select id="channelSelect"></select>
+    </section>
+
+    <section class="channel-card">
+      <img id="channelAvatar" src="" alt="Аватар канала" />
+      <div>
+        <h2 id="channelName">Загрузка...</h2>
+        <p id="channelDescription"></p>
+      </div>
+    </section>
+
+    <section class="stats-grid">
+      <div class="stat-box">
+        <span>Подписчики</span>
+        <strong id="subsNow">—</strong>
+        <small id="subsGrowth">—</small>
+      </div>
+      <div class="stat-box">
+        <span>Просмотры</span>
+        <strong id="viewsNow">—</strong>
+        <small id="viewsGrowth">—</small>
+      </div>
+      <div class="stat-box">
+        <span>Видео</span>
+        <strong id="videosNow">—</strong>
+        <small id="videosGrowth">—</small>
+      </div>
+      <div class="stat-box">
+        <span>Последнее обновление</span>
+        <strong id="lastDate">—</strong>
+        <small>по данным из data.json</small>
+      </div>
+    </section>
+
+    <section class="chart-box">
+      <h3>График подписчиков</h3>
+      <canvas id="subsChart"></canvas>
+    </section>
+
+    <section class="chart-box">
+      <h3>График просмотров</h3>
+      <canvas id="viewsChart"></canvas>
+    </section>
+
+    <section class="table-box">
+      <h3>История статистики</h3>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Дата</th>
+              <th>Подписчики</th>
+              <th>Просмотры</th>
+              <th>Видео</th>
+              <th>Прирост подписчиков</th>
+            </tr>
+          </thead>
+          <tbody id="historyTable"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Данные редактируются в файле <b>data.json</b></p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
