@@ -6,6 +6,7 @@
   <title>Channel Stats Archive</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 </head>
 <body>
   <header class="header">
@@ -16,9 +17,20 @@
   </header>
 
   <main class="container">
-    <section class="panel">
-      <label for="channelSelect">Выбери канал:</label>
-      <select id="channelSelect"></select>
+    <section class="panel filters">
+      <div>
+        <label for="channelSelect">Выбери канал:</label>
+        <select id="channelSelect"></select>
+      </div>
+      <div>
+        <label for="yearSelect">Выбери год:</label>
+        <select id="yearSelect"></select>
+      </div>
+      <button id="resetZoomBtn" type="button">Сбросить масштаб</button>
+    </section>
+
+    <section class="hint-box">
+      <b>Как двигать график:</b> колесиком мыши — приближение, зажать и тянуть — двигать график. На телефоне — двумя пальцами.
     </section>
 
     <section class="channel-card">

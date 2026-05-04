@@ -31,6 +31,7 @@ body {
 }
 
 .panel,
+.hint-box,
 .channel-card,
 .stat-box,
 .chart-box,
@@ -46,7 +47,15 @@ body {
   margin-bottom: 16px;
 }
 
-select {
+.filters {
+  display: grid;
+  grid-template-columns: 1fr 180px 190px;
+  gap: 14px;
+  align-items: end;
+}
+
+select,
+button {
   width: 100%;
   margin-top: 8px;
   padding: 12px;
@@ -55,6 +64,23 @@ select {
   background: #020617;
   color: #fff;
   font-size: 16px;
+}
+
+button {
+  cursor: pointer;
+  background: #2563eb;
+  border-color: #3b82f6;
+  font-weight: bold;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+.hint-box {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  color: #cbd5e1;
 }
 
 .channel-card {
@@ -147,6 +173,10 @@ th {
 }
 
 @media (max-width: 800px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
