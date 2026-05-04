@@ -1,39 +1,71 @@
-const fs = require('fs');
+const fs = require("fs");
 
-const data = JSON.parse(fs.readFileSync('data.json', 'utf8'));
+const API_KEY = process.env.YOUTUBE_API_KEY;
+
+if (!API_KEY) {
+  throw new Error("YOUTUBE_API_KEY не найден");
+}
+
+const dataPath = "data.json";
+const channelsPath = "channels.json";
+
+const data = JSON.parse(fs.readFileSync(dataPath, "utf8"));
+const channels = JSON.parse(fs.readFileSync(channelsPath, "utf8"));
 
 const today = new Date().toISOString().slice(0, 10);
 
-// пример канала
-const channel = {
-  id: "UCDCNmuaOXOo25Yn4mbMHhhQ",
-  name: "Talking Tom & Friends TV"
-};
+async function getStats(channelId) {
+  const url =
+    `https://www.googleapis.com/youtube/v3/channels` +
+    `?part=snippet,statistics&id=${channelId}&key=${API_KEY}`;
 
-// пример (пока вручную)
-const stats = {
-  subscribers: Math.floor(Math.random() * 1000000),
-  views: Math.floor(Math.random() * 100000000),
-  videos: Math.floor(Math.random() * 500)
-};
+  const res = await fetch(url);
+  const json = await res.json();
 
-const existingIndex = data.findIndex(
-  item => item.date === today && item.channelId === channel.id
-);
+  if (!json.items || json.items.length === 0) {
+    throw new Error(`Канал не найден: ${channelId}`);
+  }
 
-const newRecord = {
-  date: today,
-  channel: channel.name,
-  channelId: channel.id,
-  subscribers: stats.subscribers,
-  views: stats.views,
-  videos: stats.videos
-};
+  const item = json.items[0];
 
-if (existingIndex >= 0) {
-  data[existingIndex] = newRecord;
-} else {
-  data.push(newRecord);
+  return {
+    title: item.snippet.title,
+    subscribers: Number(item.statistics.subscriberCount || 0),
+    views: Number(item.statistics.viewCount || 0),
+    videos: Number(item.statistics.videoCount || 0)
+  };
 }
 
-fs.writeFileSync('data.json', JSON.stringify(data, null, 2));
+(async () => {
+  for (const channel of channels) {
+    const stats = await getStats(channel.channelId);
+
+    const newRecord = {
+      date: today,
+      channel: channel.name || stats.title,
+      channelId: channel.channelId,
+      subscribers: stats.subscribers,
+      views: stats.views,
+      videos: stats.videos
+    };
+
+    const index = data.findIndex(
+      item => item.date === today && item.channelId === channel.channelId
+    );
+
+    if (index >= 0) {
+      data[index] = newRecord;
+    } else {
+      data.push(newRecord);
+    }
+  }
+
+  data.sort((a, b) => {
+    if (a.channelId !== b.channelId) {
+      return a.channel.localeCompare(b.channel);
+    }
+    return a.date.localeCompare(b.date);
+  });
+
+  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+})();
